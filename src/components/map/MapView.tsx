@@ -8,10 +8,41 @@ import { Project, Coordinates, GeoPolygon } from "@/types";
 import { calculatePolygonArea } from "@/utils/calculations";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { createControlComponent } from "@react-leaflet/core";
 
-// We need to declare the EditControl as any since we don't have proper types
-// @ts-ignore
-import { EditControl } from "react-leaflet-draw";
+// Create a custom EditControl component since react-leaflet-draw has issues
+// This is a wrapper around the L.Control.Draw from leaflet-draw
+const createEditControl = (props: any) => {
+  const { position, onCreated, draw, edit } = props;
+  
+  const DrawControl = L.Control.extend({
+    options: {
+      position: position || 'topright',
+      draw: draw,
+      edit: edit
+    },
+    
+    onAdd: function(map: L.Map) {
+      const container = L.DomUtil.create('div');
+      
+      // Initialize the Leaflet.draw plugin
+      const drawControl = new L.Control.Draw(this.options);
+      map.addControl(drawControl);
+      
+      // Handle draw events
+      map.on(L.Draw.Event.CREATED, (e) => {
+        if (onCreated) onCreated(e);
+      });
+      
+      return container;
+    }
+  });
+  
+  return new DrawControl();
+};
+
+// Create a React component from our custom control
+const EditControl = createControlComponent(createEditControl);
 
 // Fix the Leaflet icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
