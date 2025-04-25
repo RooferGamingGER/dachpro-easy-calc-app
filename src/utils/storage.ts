@@ -22,8 +22,7 @@ export const saveProjects = (projects: Project[]): void => {
     localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
   } catch (error) {
     console.error("Error saving projects to storage:", error);
-    toast({
-      title: "Fehler",
+    toast("Fehler", {
       description: "Projekte konnten nicht gespeichert werden",
       variant: "destructive",
     });
@@ -58,8 +57,7 @@ export const saveProject = (project: Project): void => {
   }
 
   saveProjects(projects);
-  toast({
-    title: "Gespeichert",
+  toast("Gespeichert", {
     description: "Projekt wurde erfolgreich gespeichert",
   });
 };
@@ -69,8 +67,7 @@ export const deleteProject = (id: string): void => {
   const projects = getProjects();
   const updatedProjects = projects.filter((project) => project.id !== id);
   saveProjects(updatedProjects);
-  toast({
-    title: "Gelöscht",
+  toast("Gelöscht", {
     description: "Projekt wurde erfolgreich gelöscht",
   });
 };
