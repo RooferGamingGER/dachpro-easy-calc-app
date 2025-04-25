@@ -165,31 +165,29 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
           <Marker position={[coordinates.lat, coordinates.lng]} />
           
           <FeatureGroup ref={featureGroupRef}>
-            {/* Render the EditControl component separately */}
-            {featureGroupRef.current && (
-              <EditControl
-                position="topright"
-                onCreated={handleCreated}
-                draw={{
-                  rectangle: false,
-                  circle: false,
-                  circlemarker: false,
-                  marker: false,
-                  polyline: false,
-                  polygon: {
-                    allowIntersection: false,
-                    drawError: {
-                      color: '#e1e100',
-                      message: '<strong>Polygon Fehler:</strong> Selbstüberschneidungen nicht erlaubt!'
-                    },
-                    shapeOptions: {
-                      color: '#3388ff',
-                      fillOpacity: 0.2
-                    }
+            {/* Only render EditControl after the FeatureGroup has been initialized */}
+            <EditControl
+              position="topright"
+              onCreated={handleCreated}
+              draw={{
+                rectangle: false,
+                circle: false,
+                circlemarker: false,
+                marker: false,
+                polyline: false,
+                polygon: {
+                  allowIntersection: false,
+                  drawError: {
+                    color: '#e1e100',
+                    message: '<strong>Polygon Fehler:</strong> Selbstüberschneidungen nicht erlaubt!'
+                  },
+                  shapeOptions: {
+                    color: '#3388ff',
+                    fillOpacity: 0.2
                   }
-                }}
-              />
-            )}
+                }
+              }}
+            />
             
             {polygon.length > 0 && (
               <Polygon positions={polygon} />
