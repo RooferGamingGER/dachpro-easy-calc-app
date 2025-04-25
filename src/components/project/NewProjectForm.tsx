@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -6,9 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Project } from "@/types";
-import { geocodeAddress } from "@/utils/geocoding";
+import { AddressOption } from "@/types/address";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AddressSelect } from "@/components/ui/AddressSelect";
 
 interface NewProjectFormProps {
   onSave: (project: Project) => void;
@@ -23,6 +23,7 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
     address: "",
     description: ""
   });
+  const [selectedAddress, setSelectedAddress] = useState<AddressOption | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (
@@ -33,6 +34,15 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleAddressChange = (value: string) => {
+    setFormData(prev => ({ ...prev, address: value }));
+  };
+
+  const handleAddressSelect = (address: AddressOption) => {
+    setSelectedAddress(address);
+    setFormData(prev => ({ ...prev, address: address.label }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,20 +60,17 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
     setIsLoading(true);
     
     try {
-      // Geocode the address
-      const coordinates = await geocodeAddress(formData.address);
-      
       const newProject: Project = {
         id: Date.now().toString(),
         ...formData,
         createdAt: new Date(),
         updatedAt: new Date(),
-        coordinates: coordinates || undefined
+        coordinates: selectedAddress ? selectedAddress.coordinates : undefined
       };
       
       onSave(newProject);
       
-      if (!coordinates) {
+      if (!selectedAddress) {
         toast("Hinweis", {
           description: "Projekt wurde gespeichert, aber die Adresse konnte nicht georeferenziert werden."
         });
@@ -111,14 +118,10 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
 
         <div className="space-y-2">
           <Label htmlFor="address">Adresse *</Label>
-          <Input
-            id="address"
-            name="address"
+          <AddressSelect
             value={formData.address}
-            onChange={handleChange}
-            className="input-field"
-            placeholder="Vollständige Adresse"
-            required
+            onValueChange={handleAddressChange}
+            onAddressSelect={handleAddressSelect}
           />
         </div>
 
