@@ -20,23 +20,33 @@ export function useAddressSearch(query: string) {
         const response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(
             debouncedQuery
-          )}&addressdetails=1&limit=5`
+          )}&addressdetails=1&limit=5&accept-language=de`
         );
 
         if (!response.ok) throw new Error('Fehler bei der Adresssuche');
 
         const results: AddressResult[] = await response.json();
         
-        const formattedOptions: AddressOption[] = results.map((result) => ({
-          value: result.place_id.toString(),
-          label: result.display_name,
-          coordinates: {
-            lat: parseFloat(result.lat),
-            lng: parseFloat(result.lon)
-          }
-        }));
+        const formattedOptions: AddressOption[] = results.map((result) => {
+          const address = result.address;
+          const label = [
+            address.road || '',
+            address.house_number ? address.house_number : '',
+            address.postcode || '',
+            address.city || ''
+          ].filter(Boolean).join(' ');
 
-        setOptions(formattedOptions);
+          return {
+            value: result.place_id.toString(),
+            label: label.trim(),
+            coordinates: {
+              lat: parseFloat(result.lat),
+              lng: parseFloat(result.lon)
+            }
+          };
+        });
+
+        setOptions(formattedOptions.filter(option => option.label.length > 0));
       } catch (error) {
         console.error('Address search error:', error);
         setOptions([]);

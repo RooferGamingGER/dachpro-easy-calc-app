@@ -10,6 +10,7 @@ export interface AddressResult {
     postcode?: string;
     city?: string;
     country?: string;
+    state?: string;
   };
 }
 
