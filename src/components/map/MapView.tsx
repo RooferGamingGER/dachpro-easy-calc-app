@@ -23,7 +23,17 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Create a custom EditControl as a React hook
+// Component to automatically center map on coordinates
+const SetViewOnLoad: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([coordinates.lat, coordinates.lng], 18);
+  }, [coordinates, map]);
+  
+  return null;
+};
+
+// Custom hook to add draw control to the map
 function useDrawControl(props: {
   position?: L.ControlPosition;
   onCreated?: (e: any) => void;
@@ -35,51 +45,35 @@ function useDrawControl(props: {
   const drawControlRef = useRef<any>(null);
   
   useEffect(() => {
-    // Only create the control once
-    if (!drawControlRef.current) {
-      // Initialize the Leaflet.draw plugin
-      const drawControl = new (L as any).Control.Draw({
-        position: position || 'topright',
-        draw: draw,
-        edit: edit
-      });
+    if (!map) return;
+    
+    // Initialize the Leaflet.draw plugin
+    const drawControl = new (L as any).Control.Draw({
+      position: position || 'topright',
+      draw: draw,
+      edit: edit
+    });
 
-      map.addControl(drawControl);
-      drawControlRef.current = drawControl;
-      
-      // Handle draw events
-      map.on((L as any).Draw.Event.CREATED, (e: any) => {
-        if (onCreated) onCreated(e);
-      });
-    }
+    map.addControl(drawControl);
+    drawControlRef.current = drawControl;
+    
+    // Handle draw events
+    map.on((L as any).Draw.Event.CREATED, (e: any) => {
+      if (onCreated) onCreated(e);
+    });
     
     return () => {
       // Clean up when the component unmounts
-      if (drawControlRef.current) {
-        map.removeControl(drawControlRef.current);
-        map.off((L as any).Draw.Event.CREATED);
-        drawControlRef.current = null;
-      }
+      map.removeControl(drawControl);
+      map.off((L as any).Draw.Event.CREATED);
     };
   }, [map, position, onCreated, draw, edit]);
   
   return null;
 }
 
-// Component to automatically center map on coordinates
-const SetViewOnLoad: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView([coordinates.lat, coordinates.lng], 18);
-  }, [coordinates, map]);
-  
-  return null;
-};
-
 // Component for drawing controls
-const DrawControl: React.FC<{
-  onCreated: (e: any) => void;
-}> = ({ onCreated }) => {
+const DrawControls = ({ onCreated }: { onCreated: (e: any) => void }) => {
   useDrawControl({
     position: "topright",
     onCreated: onCreated,
@@ -129,14 +123,14 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
     }
   }, [project.roofPolygon]);
 
-  // Type declaration for the event from EditControl
-  interface EditControlEvent {
+  // Type declaration for the event from DrawControls
+  interface DrawControlEvent {
     layer: L.Layer;
     layerType: string;
     layers?: L.LayerGroup;
   }
 
-  const handleCreated = (e: EditControlEvent) => {
+  const handleCreated = (e: DrawControlEvent) => {
     const { layer } = e;
     
     if (layer instanceof L.Polygon) {
@@ -201,7 +195,7 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
           <Marker position={[coordinates.lat, coordinates.lng]} />
           
           <FeatureGroup ref={featureGroupRef}>
-            <DrawControl onCreated={handleCreated} />
+            <DrawControls onCreated={handleCreated} />
             
             {polygon.length > 0 && (
               <Polygon positions={polygon} />
