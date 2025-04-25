@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, useMap, Polygon } from "react-leaflet";
 import { FeatureGroup } from "react-leaflet";
@@ -15,6 +16,8 @@ import { createControlComponent } from "@react-leaflet/core";
 const createEditControl = (props: any) => {
   const { position, onCreated, draw, edit } = props;
   
+  // We need to explicitly type this since L.Draw is not recognized in TypeScript
+  // but exists at runtime when leaflet-draw is imported
   const DrawControl = L.Control.extend({
     options: {
       position: position || 'topright',
@@ -26,11 +29,11 @@ const createEditControl = (props: any) => {
       const container = L.DomUtil.create('div');
       
       // Initialize the Leaflet.draw plugin
-      const drawControl = new L.Control.Draw(this.options);
+      const drawControl = new (L as any).Control.Draw(this.options);
       map.addControl(drawControl);
       
       // Handle draw events
-      map.on(L.Draw.Event.CREATED, (e) => {
+      map.on((L as any).Draw.Event.CREATED, (e: any) => {
         if (onCreated) onCreated(e);
       });
       
@@ -58,7 +61,7 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Component to automatically center map on coordinates
-const SetViewOnLoad = ({ coordinates }: { coordinates: Coordinates }) => {
+const SetViewOnLoad: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) => {
   const map = useMap();
   useEffect(() => {
     map.setView([coordinates.lat, coordinates.lng], 18);
@@ -162,28 +165,32 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
           <Marker position={[coordinates.lat, coordinates.lng]} />
           
           <FeatureGroup ref={featureGroupRef}>
-            <EditControl
-              position="topright"
-              onCreated={handleCreated}
-              draw={{
-                rectangle: false,
-                circle: false,
-                circlemarker: false,
-                marker: false,
-                polyline: false,
-                polygon: {
-                  allowIntersection: false,
-                  drawError: {
-                    color: '#e1e100',
-                    message: '<strong>Polygon Fehler:</strong> Selbstüberschneidungen nicht erlaubt!'
-                  },
-                  shapeOptions: {
-                    color: '#3388ff',
-                    fillOpacity: 0.2
+            {/* Render the EditControl component separately */}
+            {featureGroupRef.current && (
+              <EditControl
+                position="topright"
+                onCreated={handleCreated}
+                draw={{
+                  rectangle: false,
+                  circle: false,
+                  circlemarker: false,
+                  marker: false,
+                  polyline: false,
+                  polygon: {
+                    allowIntersection: false,
+                    drawError: {
+                      color: '#e1e100',
+                      message: '<strong>Polygon Fehler:</strong> Selbstüberschneidungen nicht erlaubt!'
+                    },
+                    shapeOptions: {
+                      color: '#3388ff',
+                      fillOpacity: 0.2
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            )}
+            
             {polygon.length > 0 && (
               <Polygon positions={polygon} />
             )}
