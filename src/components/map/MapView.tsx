@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, useMap, Polygon } from "react-leaflet";
 import { FeatureGroup } from "react-leaflet";
-import { EditControl } from "react-leaflet-draw";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
@@ -10,6 +9,10 @@ import { Project, Coordinates, GeoPolygon } from "@/types";
 import { calculatePolygonArea } from "@/utils/calculations";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+
+// We need to declare the EditControl as any since we don't have proper types
+// @ts-ignore
+import { EditControl } from "react-leaflet-draw";
 
 // Fix the Leaflet icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -57,7 +60,14 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
     }
   }, [project.roofPolygon]);
 
-  const handleCreated = (e: any) => {
+  // Type declaration for the event from EditControl
+  interface EditControlEvent {
+    layer: L.Layer;
+    layerType: string;
+    layers: L.LayerGroup;
+  }
+
+  const handleCreated = (e: EditControlEvent) => {
     const { layer } = e;
     
     if (layer instanceof L.Polygon) {
