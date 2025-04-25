@@ -24,7 +24,8 @@ export const saveProjects = (projects: Project[]): void => {
     console.error("Error saving projects to storage:", error);
     toast("Fehler", {
       description: "Projekte konnten nicht gespeichert werden",
-      variant: "destructive",
+      // Replacing 'variant' with 'style' property that is supported by sonner
+      style: { backgroundColor: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))' }
     });
   }
 };
