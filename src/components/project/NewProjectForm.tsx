@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Project } from "@/types";
+import { geocodeAddress } from "@/utils/geocoding";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface NewProjectFormProps {
   onSave: (project: Project) => void;
@@ -13,13 +16,14 @@ interface NewProjectFormProps {
 }
 
 export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel }) => {
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     customer: "",
     address: "",
     description: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -31,11 +35,11 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.customer || !formData.address) {
-      toast({
+      uiToast({
         title: "Fehler",
         description: "Bitte füllen Sie alle Pflichtfelder aus",
         variant: "destructive",
@@ -43,14 +47,37 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
       return;
     }
 
-    const newProject: Project = {
-      id: Date.now().toString(),
-      ...formData,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    onSave(newProject);
+    setIsLoading(true);
+    
+    try {
+      // Geocode the address
+      const coordinates = await geocodeAddress(formData.address);
+      
+      const newProject: Project = {
+        id: Date.now().toString(),
+        ...formData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        coordinates: coordinates || undefined
+      };
+      
+      onSave(newProject);
+      
+      if (!coordinates) {
+        toast("Hinweis", {
+          description: "Projekt wurde gespeichert, aber die Adresse konnte nicht georeferenziert werden."
+        });
+      }
+    } catch (error) {
+      console.error("Error creating project:", error);
+      uiToast({
+        title: "Fehler",
+        description: "Projekt konnte nicht erstellt werden",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -113,15 +140,24 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
           type="button"
           variant="outline"
           onClick={onCancel}
+          disabled={isLoading}
           className="touch-button"
         >
           Abbrechen
         </Button>
         <Button 
           type="submit"
+          disabled={isLoading}
           className="touch-button bg-dachpro-blue hover:bg-dachpro-blue-light text-white"
         >
-          Projekt erstellen
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Verarbeite...
+            </>
+          ) : (
+            "Projekt erstellen"
+          )}
         </Button>
       </div>
     </form>

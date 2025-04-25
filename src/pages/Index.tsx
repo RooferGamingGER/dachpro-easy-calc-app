@@ -8,14 +8,15 @@ import { NewProjectForm } from "@/components/project/NewProjectForm";
 import { RoofCalculator } from "@/components/calculation/RoofCalculator";
 import { MaterialList } from "@/components/materials/MaterialList";
 import { FileUpload } from "@/components/ui/FileUpload";
-import { Measurement, Photo, Project } from "@/types";
+import { Measurement, Photo, Project, GeoPolygon } from "@/types";
 import { getProjects, saveProject, deleteProject } from "@/utils/storage";
+import { MapView } from "@/components/map/MapView";
 
 const Index = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("measurements");
+  const [activeTab, setActiveTab] = useState("map");
   
   // Load projects from local storage
   useEffect(() => {
@@ -32,6 +33,10 @@ const Index = () => {
     setProjects([...projects, project]);
     setIsNewProjectDialogOpen(false);
     setCurrentProject(project);
+    // If we have coordinates, automatically switch to map tab
+    if (project.coordinates) {
+      setActiveTab("map");
+    }
   };
 
   const handleDeleteProject = (id: string) => {
@@ -80,6 +85,24 @@ const Index = () => {
     setCurrentProject(updatedProject);
   };
 
+  const handleSavePolygon = (polygon: GeoPolygon) => {
+    if (!currentProject) return;
+    
+    const updatedProject: Project = {
+      ...currentProject,
+      roofPolygon: polygon,
+      // Also update measurements to use the polygon area
+      measurements: {
+        ...(currentProject.measurements || { length: 0, width: 0, pitch: 0, area: 0 }),
+        area: polygon.area
+      },
+      updatedAt: new Date()
+    };
+    
+    saveProject(updatedProject);
+    setCurrentProject(updatedProject);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 rooftop-bg">
       <Navbar onNewProject={handleNewProject} />
@@ -120,12 +143,22 @@ const Index = () => {
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="map">Karte</TabsTrigger>
                 <TabsTrigger value="measurements">Flächen</TabsTrigger>
                 <TabsTrigger value="materials">Material</TabsTrigger>
                 <TabsTrigger value="photos">Fotos</TabsTrigger>
               </TabsList>
               
+              <TabsContent value="map" className="mt-6">
+                {currentProject && (
+                  <MapView 
+                    project={currentProject}
+                    onPolygonSave={handleSavePolygon}
+                  />
+                )}
+              </TabsContent>
+
               <TabsContent value="measurements" className="mt-6">
                 <RoofCalculator 
                   project={currentProject}

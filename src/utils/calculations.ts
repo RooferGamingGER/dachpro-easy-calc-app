@@ -1,5 +1,5 @@
 
-import { Measurement } from "@/types";
+import { Measurement, Coordinates } from "@/types";
 
 // Calculate roof area based on length, width and pitch
 export const calculateRoofArea = (
@@ -53,4 +53,30 @@ export const estimateProjectCost = (area: number): number => {
   const laborCost = area * laborCostPerM2;
   
   return Math.round((materialCost + laborCost) * 100) / 100;
+};
+
+// Calculate area of polygon from coordinates
+export const calculatePolygonArea = (points: Coordinates[]): number => {
+  if (points.length < 3) return 0;
+  
+  // Implementation of the Shoelace formula (Gauss's area formula)
+  let area = 0;
+  
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    area += points[i].lat * points[j].lng;
+    area -= points[j].lat * points[i].lng;
+  }
+  
+  area = Math.abs(area) / 2;
+  
+  // Convert to square meters (approximation using the Haversine formula)
+  // This is an approximation for small areas
+  const lat = points.reduce((sum, point) => sum + point.lat, 0) / points.length;
+  const metersPerLatDegree = 111320; // meters per degree of latitude
+  const metersPerLngDegree = 111320 * Math.cos(lat * (Math.PI / 180)); // meters per degree of longitude
+  
+  const areaInSquareMeters = area * metersPerLatDegree * metersPerLngDegree;
+  
+  return Math.round(areaInSquareMeters * 100) / 100;
 };

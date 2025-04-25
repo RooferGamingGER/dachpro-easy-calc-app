@@ -10,6 +10,8 @@ export interface Project {
   measurements?: Measurement;
   photos?: Photo[];
   materials?: Material[];
+  coordinates?: Coordinates;
+  roofPolygon?: GeoPolygon;
 }
 
 export interface Measurement {
@@ -31,4 +33,14 @@ export interface Material {
   quantity: number;
   unit: string;
   price?: number;
+}
+
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface GeoPolygon {
+  points: Coordinates[];
+  area: number;
 }
