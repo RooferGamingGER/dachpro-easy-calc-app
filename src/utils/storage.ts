@@ -1,6 +1,6 @@
 
 import { Project } from "@/types";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/sonner";
 
 // Local storage keys
 const PROJECTS_KEY = "dachpro_projects";
