@@ -9,43 +9,6 @@ import { Project, Coordinates, GeoPolygon } from "@/types";
 import { calculatePolygonArea } from "@/utils/calculations";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { createControlComponent } from "@react-leaflet/core";
-
-// Create a custom EditControl component since react-leaflet-draw has issues
-// This is a wrapper around the L.Control.Draw from leaflet-draw
-const createEditControl = (props: any) => {
-  const { position, onCreated, draw, edit } = props;
-  
-  // We need to explicitly type this since L.Draw is not recognized in TypeScript
-  // but exists at runtime when leaflet-draw is imported
-  const DrawControl = L.Control.extend({
-    options: {
-      position: position || 'topright',
-      draw: draw,
-      edit: edit
-    },
-    
-    onAdd: function(map: L.Map) {
-      const container = L.DomUtil.create('div');
-      
-      // Initialize the Leaflet.draw plugin
-      const drawControl = new (L as any).Control.Draw(this.options);
-      map.addControl(drawControl);
-      
-      // Handle draw events
-      map.on((L as any).Draw.Event.CREATED, (e: any) => {
-        if (onCreated) onCreated(e);
-      });
-      
-      return container;
-    }
-  });
-  
-  return new DrawControl();
-};
-
-// Create a React component from our custom control
-const EditControl = createControlComponent(createEditControl);
 
 // Fix the Leaflet icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -60,12 +23,85 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Create a custom EditControl as a React hook
+function useDrawControl(props: {
+  position?: L.ControlPosition;
+  onCreated?: (e: any) => void;
+  draw?: any;
+  edit?: any;
+}) {
+  const { position, onCreated, draw, edit } = props;
+  const map = useMap();
+  const drawControlRef = useRef<any>(null);
+  
+  useEffect(() => {
+    // Only create the control once
+    if (!drawControlRef.current) {
+      // Initialize the Leaflet.draw plugin
+      const drawControl = new (L as any).Control.Draw({
+        position: position || 'topright',
+        draw: draw,
+        edit: edit
+      });
+
+      map.addControl(drawControl);
+      drawControlRef.current = drawControl;
+      
+      // Handle draw events
+      map.on((L as any).Draw.Event.CREATED, (e: any) => {
+        if (onCreated) onCreated(e);
+      });
+    }
+    
+    return () => {
+      // Clean up when the component unmounts
+      if (drawControlRef.current) {
+        map.removeControl(drawControlRef.current);
+        map.off((L as any).Draw.Event.CREATED);
+        drawControlRef.current = null;
+      }
+    };
+  }, [map, position, onCreated, draw, edit]);
+  
+  return null;
+}
+
 // Component to automatically center map on coordinates
 const SetViewOnLoad: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) => {
   const map = useMap();
   useEffect(() => {
     map.setView([coordinates.lat, coordinates.lng], 18);
   }, [coordinates, map]);
+  
+  return null;
+};
+
+// Component for drawing controls
+const DrawControl: React.FC<{
+  onCreated: (e: any) => void;
+}> = ({ onCreated }) => {
+  useDrawControl({
+    position: "topright",
+    onCreated: onCreated,
+    draw: {
+      rectangle: false,
+      circle: false,
+      circlemarker: false,
+      marker: false,
+      polyline: false,
+      polygon: {
+        allowIntersection: false,
+        drawError: {
+          color: '#e1e100',
+          message: '<strong>Polygon Fehler:</strong> Selbstüberschneidungen nicht erlaubt!'
+        },
+        shapeOptions: {
+          color: '#3388ff',
+          fillOpacity: 0.2
+        }
+      }
+    }
+  });
   
   return null;
 };
@@ -97,7 +133,7 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
   interface EditControlEvent {
     layer: L.Layer;
     layerType: string;
-    layers: L.LayerGroup;
+    layers?: L.LayerGroup;
   }
 
   const handleCreated = (e: EditControlEvent) => {
@@ -165,29 +201,7 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
           <Marker position={[coordinates.lat, coordinates.lng]} />
           
           <FeatureGroup ref={featureGroupRef}>
-            {/* Only render EditControl after the FeatureGroup has been initialized */}
-            <EditControl
-              position="topright"
-              onCreated={handleCreated}
-              draw={{
-                rectangle: false,
-                circle: false,
-                circlemarker: false,
-                marker: false,
-                polyline: false,
-                polygon: {
-                  allowIntersection: false,
-                  drawError: {
-                    color: '#e1e100',
-                    message: '<strong>Polygon Fehler:</strong> Selbstüberschneidungen nicht erlaubt!'
-                  },
-                  shapeOptions: {
-                    color: '#3388ff',
-                    fillOpacity: 0.2
-                  }
-                }
-              }}
-            />
+            <DrawControl onCreated={handleCreated} />
             
             {polygon.length > 0 && (
               <Polygon positions={polygon} />
