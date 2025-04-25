@@ -33,69 +33,52 @@ const SetViewOnLoad: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) 
   return null;
 };
 
-// Custom hook to add draw control to the map
-function useDrawControl(props: {
-  position?: L.ControlPosition;
-  onCreated?: (e: any) => void;
-  draw?: any;
-  edit?: any;
-}) {
-  const { position, onCreated, draw, edit } = props;
+// Draw control component that properly handles React context
+const DrawControl: React.FC<{ onCreated: (e: any) => void }> = ({ onCreated }) => {
   const map = useMap();
-  const drawControlRef = useRef<any>(null);
   
+  // Set up draw control once when component mounts
   useEffect(() => {
     if (!map) return;
-    
-    // Initialize the Leaflet.draw plugin
-    const drawControl = new (L as any).Control.Draw({
-      position: position || 'topright',
-      draw: draw,
-      edit: edit
-    });
 
-    map.addControl(drawControl);
-    drawControlRef.current = drawControl;
-    
-    // Handle draw events
-    map.on((L as any).Draw.Event.CREATED, (e: any) => {
-      if (onCreated) onCreated(e);
-    });
-    
-    return () => {
-      // Clean up when the component unmounts
-      map.removeControl(drawControl);
-      map.off((L as any).Draw.Event.CREATED);
-    };
-  }, [map, position, onCreated, draw, edit]);
-  
-  return null;
-}
-
-// Component for drawing controls
-const DrawControls = ({ onCreated }: { onCreated: (e: any) => void }) => {
-  useDrawControl({
-    position: "topright",
-    onCreated: onCreated,
-    draw: {
-      rectangle: false,
-      circle: false,
-      circlemarker: false,
-      marker: false,
-      polyline: false,
-      polygon: {
-        allowIntersection: false,
-        drawError: {
-          color: '#e1e100',
-          message: '<strong>Polygon Fehler:</strong> Selbstüberschneidungen nicht erlaubt!'
-        },
-        shapeOptions: {
-          color: '#3388ff',
-          fillOpacity: 0.2
+    // Draw control options
+    const drawControlOptions = {
+      position: 'topright',
+      draw: {
+        rectangle: false,
+        circle: false,
+        circlemarker: false,
+        marker: false,
+        polyline: false,
+        polygon: {
+          allowIntersection: false,
+          drawError: {
+            color: '#e1e100',
+            message: '<strong>Polygon Fehler:</strong> Selbstüberschneidungen nicht erlaubt!'
+          },
+          shapeOptions: {
+            color: '#3388ff',
+            fillOpacity: 0.2
+          }
         }
       }
-    }
-  });
+    };
+    
+    // Create the draw control
+    const drawControl = new (L as any).Control.Draw(drawControlOptions);
+    
+    // Add the control to the map
+    map.addControl(drawControl);
+    
+    // Set up event listener
+    map.on((L as any).Draw.Event.CREATED, onCreated);
+    
+    // Clean up on unmount
+    return () => {
+      map.removeControl(drawControl);
+      map.off((L as any).Draw.Event.CREATED, onCreated);
+    };
+  }, [map, onCreated]);
   
   return null;
 };
@@ -123,7 +106,7 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
     }
   }, [project.roofPolygon]);
 
-  // Type declaration for the event from DrawControls
+  // Type declaration for the event from DrawControl
   interface DrawControlEvent {
     layer: L.Layer;
     layerType: string;
@@ -195,7 +178,7 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
           <Marker position={[coordinates.lat, coordinates.lng]} />
           
           <FeatureGroup ref={featureGroupRef}>
-            <DrawControls onCreated={handleCreated} />
+            <DrawControl onCreated={handleCreated} />
             
             {polygon.length > 0 && (
               <Polygon positions={polygon} />
