@@ -41,10 +41,15 @@ export function AddressSelect({
     }
   }, [value]);
 
-  const handleSelect = (selectedOption: AddressOption) => {
-    onValueChange(selectedOption.label);
-    onAddressSelect(selectedOption);
-    setOpen(false);
+  const handleSelect = (currentValue: string) => {
+    const selectedOption = options.find(option => option.label === currentValue);
+    
+    if (selectedOption) {
+      onValueChange(selectedOption.label);
+      onAddressSelect(selectedOption);
+      setSearchQuery(selectedOption.label);
+      setOpen(false);
+    }
   };
 
   return (
@@ -66,9 +71,7 @@ export function AddressSelect({
             value={searchQuery}
             onValueChange={(value) => {
               setSearchQuery(value);
-              if (value !== searchQuery) {
-                onValueChange(value);
-              }
+              onValueChange(value);
             }}
             placeholder="Suche nach einer Adresse..."
             className="h-9"
@@ -94,8 +97,8 @@ export function AddressSelect({
                 <CommandItem
                   key={option.value}
                   value={option.label}
-                  onSelect={() => handleSelect(option)}
-                  className="flex items-center"
+                  onSelect={handleSelect}
+                  className="flex items-center cursor-pointer"
                 >
                   <div className="flex-grow text-sm truncate">{option.label}</div>
                   <Check

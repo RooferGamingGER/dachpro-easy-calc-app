@@ -18,9 +18,14 @@ export function useAddressSearch(query: string) {
 
       setIsLoading(true);
       try {
+        // Normalize German characters for better search results
+        const normalizedQuery = debouncedQuery
+          .replace(/ß/g, 'ss')
+          .normalize('NFC');
+
         const response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(
-            debouncedQuery
+            normalizedQuery
           )}&addressdetails=1&limit=5&accept-language=de`
         );
 
