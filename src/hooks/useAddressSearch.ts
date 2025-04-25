@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AddressResult, AddressOption } from '@/types/address';
 import { useDebounce } from '@/hooks/useDebounce';
+import { toast } from "sonner";
 
 export function useAddressSearch(query: string) {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,22 +24,49 @@ export function useAddressSearch(query: string) {
           )}&addressdetails=1&limit=5&accept-language=de`
         );
 
-        if (!response.ok) throw new Error('Fehler bei der Adresssuche');
+        if (!response.ok) {
+          throw new Error('Fehler bei der Adresssuche');
+        }
 
         const results: AddressResult[] = await response.json();
         
+        if (results.length === 0) {
+          setOptions([]);
+          return;
+        }
+        
         const formattedOptions: AddressOption[] = results.map((result) => {
           const address = result.address;
-          const label = [
-            address.road || '',
-            address.house_number ? address.house_number : '',
-            address.postcode || '',
-            address.city || ''
-          ].filter(Boolean).join(' ');
-
+          
+          // Format the address in a readable German format
+          let addressParts = [];
+          
+          if (address.road) {
+            addressParts.push(address.road + (address.house_number ? ' ' + address.house_number : ''));
+          }
+          
+          if (address.postcode || address.city) {
+            let locationPart = '';
+            if (address.postcode) locationPart += address.postcode;
+            if (address.city) locationPart += (locationPart ? ' ' : '') + address.city;
+            addressParts.push(locationPart);
+          }
+          
+          if (addressParts.length === 0) {
+            // Fallback to display_name if we couldn't extract structured address parts
+            return {
+              value: result.place_id.toString(),
+              label: result.display_name,
+              coordinates: {
+                lat: parseFloat(result.lat),
+                lng: parseFloat(result.lon)
+              }
+            };
+          }
+          
           return {
             value: result.place_id.toString(),
-            label: label.trim(),
+            label: addressParts.join(', '),
             coordinates: {
               lat: parseFloat(result.lat),
               lng: parseFloat(result.lon)
@@ -46,9 +74,12 @@ export function useAddressSearch(query: string) {
           };
         });
 
-        setOptions(formattedOptions.filter(option => option.label.length > 0));
+        setOptions(formattedOptions);
       } catch (error) {
         console.error('Address search error:', error);
+        toast("Fehler bei der Adresssuche", {
+          description: "Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+        });
         setOptions([]);
       } finally {
         setIsLoading(false);

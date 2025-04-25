@@ -11,6 +11,12 @@ export interface AddressResult {
     city?: string;
     country?: string;
     state?: string;
+    village?: string;
+    town?: string;
+    hamlet?: string;
+    suburb?: string;
+    neighbourhood?: string;
+    city_district?: string;
   };
 }
 

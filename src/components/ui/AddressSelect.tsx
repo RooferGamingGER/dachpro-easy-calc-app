@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Command,
   CommandEmpty,
@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAddressSearch } from "@/hooks/useAddressSearch";
 import { AddressOption } from "@/types/address";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, Search, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AddressSelectProps {
@@ -31,7 +31,21 @@ export function AddressSelect({
   onAddressSelect,
 }: AddressSelectProps) {
   const [open, setOpen] = useState(false);
-  const { options, isLoading } = useAddressSearch(value);
+  const [searchQuery, setSearchQuery] = useState(value || "");
+  const { options, isLoading } = useAddressSearch(searchQuery);
+  
+  // Update search query when external value changes
+  useEffect(() => {
+    if (value && value !== searchQuery) {
+      setSearchQuery(value);
+    }
+  }, [value]);
+
+  const handleSelect = (selectedOption: AddressOption) => {
+    onValueChange(selectedOption.label);
+    onAddressSelect(selectedOption);
+    setOpen(false);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -43,13 +57,19 @@ export function AddressSelect({
           className="w-full justify-between"
         >
           {value || "Adresse eingeben..."}
+          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0">
+      <PopoverContent className="w-[400px] p-0" align="start">
         <Command>
           <CommandInput
-            value={value}
-            onValueChange={onValueChange}
+            value={searchQuery}
+            onValueChange={(value) => {
+              setSearchQuery(value);
+              if (value !== searchQuery) {
+                onValueChange(value);
+              }
+            }}
             placeholder="Suche nach einer Adresse..."
             className="h-9"
           />
@@ -60,25 +80,27 @@ export function AddressSelect({
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="ml-2">Suche...</span>
                 </div>
+              ) : searchQuery.length < 3 ? (
+                <div className="flex items-center justify-center p-4">
+                  <Info className="h-4 w-4" />
+                  <span className="ml-2">Mindestens 3 Zeichen eingeben</span>
+                </div>
               ) : (
                 "Keine Adressen gefunden"
               )}
             </CommandEmpty>
-            <CommandGroup>
+            <CommandGroup heading="Gefundene Adressen">
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.label}
-                  onSelect={() => {
-                    onValueChange(option.label);
-                    onAddressSelect(option);
-                    setOpen(false);
-                  }}
+                  onSelect={() => handleSelect(option)}
+                  className="flex items-center"
                 >
-                  {option.label}
+                  <div className="flex-grow text-sm truncate">{option.label}</div>
                   <Check
                     className={cn(
-                      "ml-auto h-4 w-4",
+                      "ml-2 h-4 w-4",
                       value === option.label ? "opacity-100" : "opacity-0"
                     )}
                   />
