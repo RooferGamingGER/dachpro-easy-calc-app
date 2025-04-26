@@ -46,11 +46,20 @@ export function AddressSelect({
     const selectedOption = options.find(option => option.label === currentValue);
     
     if (selectedOption) {
-      onValueChange(selectedOption.label);
-      onAddressSelect(selectedOption);
-      setSearchQuery(selectedOption.label);
-      setOpen(false);
+      // Prevent focus from moving to another field
+      setTimeout(() => {
+        onValueChange(selectedOption.label);
+        onAddressSelect(selectedOption);
+        setSearchQuery(selectedOption.label);
+        setOpen(false);
+      }, 0);
     }
+  };
+
+  const handleCommandItemClick = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent event propagation to avoid focus issues
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   return (
@@ -73,7 +82,8 @@ export function AddressSelect({
         style={{ 
           maxWidth: isMobile ? '100vw' : '400px',
           width: isMobile ? 'calc(100vw - 32px)' : '100%',
-          zIndex: 100 
+          position: 'relative',
+          zIndex: 9999 
         }}
       >
         <Command className="max-h-[300px] overflow-hidden">
@@ -109,6 +119,8 @@ export function AddressSelect({
                   value={option.label}
                   onSelect={handleSelect}
                   className="flex items-center cursor-pointer px-4 py-3"
+                  onTouchEnd={handleCommandItemClick}
+                  onClick={handleCommandItemClick}
                 >
                   <div className="flex-grow text-sm truncate">{option.label}</div>
                   <Check
