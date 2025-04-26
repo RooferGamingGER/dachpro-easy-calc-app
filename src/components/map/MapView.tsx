@@ -24,7 +24,7 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Component to automatically center map on coordinates
-const SetViewOnLoad: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) => {
+const SetViewOnLoad = ({ coordinates }: { coordinates: Coordinates }) => {
   const map = useMap();
   useEffect(() => {
     map.setView([coordinates.lat, coordinates.lng], 18);
@@ -34,9 +34,12 @@ const SetViewOnLoad: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) 
 };
 
 // Layer toggle component
-const MapLayerControl: React.FC<{ onToggleLayer: () => void, isSatelliteActive: boolean }> = ({ 
+const MapLayerControl = ({ 
   onToggleLayer, 
   isSatelliteActive 
+}: {
+  onToggleLayer: () => void, 
+  isSatelliteActive: boolean
 }) => {
   const map = useMap();
   
@@ -58,7 +61,7 @@ const MapLayerControl: React.FC<{ onToggleLayer: () => void, isSatelliteActive: 
 };
 
 // Draw control component that properly handles React context
-const DrawControl: React.FC<{ onCreated: (e: any) => void }> = ({ onCreated }) => {
+const DrawControl = ({ onCreated }: { onCreated: (e: any) => void }) => {
   const map = useMap();
   
   // Set up draw control once when component mounts
