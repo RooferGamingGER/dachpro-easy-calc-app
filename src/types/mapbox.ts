@@ -8,3 +8,11 @@ export interface MapboxFeature {
 export interface MapboxResponse {
   features: MapboxFeature[];
 }
+
+export interface MapboxAddress {
+  label: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+}

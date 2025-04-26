@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Project } from "@/types";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { MapboxAddressSelect } from "@/components/ui/MapboxAddressSelect";
+import { MapboxAddress } from "@/types/mapbox";
 
 interface NewProjectFormProps {
   onSave: (project: Project) => void;
@@ -22,7 +24,7 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
     address: "",
     description: ""
   });
-  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [selectedAddress, setSelectedAddress] = useState<MapboxAddress | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (
@@ -39,7 +41,7 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
     setFormData(prev => ({ ...prev, address: value }));
   };
 
-  const handleAddressSelect = (address: { label: string; coordinates: { lat: number; lng: number } }) => {
+  const handleAddressSelect = (address: MapboxAddress) => {
     setSelectedAddress(address);
     setFormData(prev => ({ ...prev, address: address.label }));
   };

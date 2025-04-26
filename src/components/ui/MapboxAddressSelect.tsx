@@ -3,13 +3,13 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Search } from "lucide-react";
-import { MapboxFeature } from "@/types/mapbox";
+import { MapboxFeature, MapboxAddress } from "@/types/mapbox";
 import { toast } from "sonner";
 
 interface MapboxAddressSelectProps {
   value: string;
   onValueChange: (value: string) => void;
-  onAddressSelect: (address: { label: string; coordinates: { lat: number; lng: number } }) => void;
+  onAddressSelect: (address: MapboxAddress) => void;
 }
 
 export function MapboxAddressSelect({

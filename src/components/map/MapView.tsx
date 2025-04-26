@@ -116,7 +116,7 @@ interface MapViewProps {
   onPolygonSave: (polygon: GeoPolygon) => void;
 }
 
-export const MapView = ({ project, onPolygonSave }: MapViewProps) => {
+export function MapView({ project, onPolygonSave }: MapViewProps) {
   const [coordinates, setCoordinates] = useState<Coordinates | null>(
     project.coordinates || null
   );
@@ -263,4 +263,4 @@ export const MapView = ({ project, onPolygonSave }: MapViewProps) => {
       </div>
     </div>
   );
-};
+}
