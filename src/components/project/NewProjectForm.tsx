@@ -5,10 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Project } from "@/types";
-import { AddressOption } from "@/types/address";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { AddressSelect } from "@/components/ui/AddressSelect";
+import { MapboxAddressSelect } from "@/components/ui/MapboxAddressSelect";
 
 interface NewProjectFormProps {
   onSave: (project: Project) => void;
@@ -23,7 +22,7 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
     address: "",
     description: ""
   });
-  const [selectedAddress, setSelectedAddress] = useState<AddressOption | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (
@@ -40,7 +39,7 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
     setFormData(prev => ({ ...prev, address: value }));
   };
 
-  const handleAddressSelect = (address: AddressOption) => {
+  const handleAddressSelect = (address: { label: string; coordinates: { lat: number; lng: number } }) => {
     setSelectedAddress(address);
     setFormData(prev => ({ ...prev, address: address.label }));
   };
@@ -118,7 +117,7 @@ export const NewProjectForm: React.FC<NewProjectFormProps> = ({ onSave, onCancel
 
         <div className="space-y-2">
           <Label htmlFor="address">Adresse *</Label>
-          <AddressSelect
+          <MapboxAddressSelect
             value={formData.address}
             onValueChange={handleAddressChange}
             onAddressSelect={handleAddressSelect}
