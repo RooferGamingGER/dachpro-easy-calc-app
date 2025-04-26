@@ -1,10 +1,12 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Search } from "lucide-react";
 import { MapboxFeature, MapboxAddress } from "@/types/mapbox";
 import { toast } from "sonner";
+
+// Save the Mapbox API key to localStorage
+localStorage.setItem("mapboxApiKey", "pk.eyJ1Ijoicm9vZmVyZ2FtaW5nIiwiYSI6ImNtOHduem92dTE0dHAya3NldWRuMHVlN2UifQ.p1DH0hDh_k_1fp9HIXoVKQ");
 
 interface MapboxAddressSelectProps {
   value: string;
