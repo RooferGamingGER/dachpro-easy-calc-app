@@ -197,7 +197,9 @@ export function MapView({ project, onPolygonSave }: MapViewProps) {
   return (
     <div className="space-y-4">
       <div className="h-[500px] rounded-md overflow-hidden border">
+        {/* Fix: Make sure MapContainer has a proper key to re-render when needed */}
         <MapContainer
+          key={`map-${coordinates.lat}-${coordinates.lng}`}
           center={[coordinates.lat, coordinates.lng]}
           zoom={18}
           style={{ height: "100%", width: "100%" }}
