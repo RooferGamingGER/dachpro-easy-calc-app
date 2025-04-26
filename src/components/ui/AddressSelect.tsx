@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Command,
   CommandEmpty,
@@ -35,29 +35,34 @@ export function AddressSelect({
   const [searchQuery, setSearchQuery] = useState(value || "");
   const { options, isLoading } = useAddressSearch(searchQuery);
   const isMobile = useIsMobile();
-  
+  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+
   useEffect(() => {
     if (value && value !== searchQuery) {
       setSearchQuery(value);
     }
   }, [value]);
 
-  const handleSelect = (currentValue: string) => {
-    const selectedOption = options.find(option => option.label === currentValue);
-    
-    if (selectedOption) {
-      // Prevent focus from moving to another field
-      setTimeout(() => {
+  // Handle selection after state updates are complete
+  useEffect(() => {
+    if (selectedValue) {
+      const selectedOption = options.find(option => option.label === selectedValue);
+      if (selectedOption) {
         onValueChange(selectedOption.label);
         onAddressSelect(selectedOption);
-        setSearchQuery(selectedOption.label);
+        setSearchQuery(selectedValue);
         setOpen(false);
-      }, 0);
+        setSelectedValue(null);
+      }
     }
-  };
+  }, [selectedValue, options, onValueChange, onAddressSelect]);
 
-  const handleCommandItemClick = (e: React.MouseEvent | React.TouchEvent) => {
-    // Prevent event propagation to avoid focus issues
+  const handleSelect = useCallback((currentValue: string) => {
+    // Set the selected value to trigger the effect
+    setSelectedValue(currentValue);
+  }, []);
+
+  const preventEventBubbling = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
@@ -69,6 +74,7 @@ export function AddressSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-label="Adresse auswählen"
           className="w-full justify-between"
         >
           {value || "Adresse eingeben..."}
@@ -118,9 +124,11 @@ export function AddressSelect({
                   key={option.value}
                   value={option.label}
                   onSelect={handleSelect}
-                  className="flex items-center cursor-pointer px-4 py-3"
-                  onTouchEnd={handleCommandItemClick}
-                  onClick={handleCommandItemClick}
+                  className="flex items-center cursor-pointer px-4 py-3 hover:bg-accent"
+                  onTouchStart={preventEventBubbling}
+                  onTouchEnd={preventEventBubbling}
+                  onClick={preventEventBubbling}
+                  aria-label={`Adresse auswählen: ${option.label}`}
                 >
                   <div className="flex-grow text-sm truncate">{option.label}</div>
                   <Check
