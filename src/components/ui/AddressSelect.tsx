@@ -18,6 +18,7 @@ import { useAddressSearch } from "@/hooks/useAddressSearch";
 import { AddressOption } from "@/types/address";
 import { Loader2, Check, Search, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AddressSelectProps {
   value: string;
@@ -33,8 +34,8 @@ export function AddressSelect({
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(value || "");
   const { options, isLoading } = useAddressSearch(searchQuery);
+  const isMobile = useIsMobile();
   
-  // Update search query when external value changes
   useEffect(() => {
     if (value && value !== searchQuery) {
       setSearchQuery(value);
@@ -65,8 +66,17 @@ export function AddressSelect({
           <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="start">
-        <Command>
+      <PopoverContent 
+        className="w-full p-0" 
+        align="start"
+        sideOffset={8}
+        style={{ 
+          maxWidth: isMobile ? '100vw' : '400px',
+          width: isMobile ? 'calc(100vw - 32px)' : '100%',
+          zIndex: 100 
+        }}
+      >
+        <Command className="max-h-[300px] overflow-hidden">
           <CommandInput
             value={searchQuery}
             onValueChange={(value) => {
@@ -74,9 +84,9 @@ export function AddressSelect({
               onValueChange(value);
             }}
             placeholder="Suche nach einer Adresse..."
-            className="h-9"
+            className="h-11 px-4"
           />
-          <CommandList>
+          <CommandList className="max-h-[250px] overflow-y-auto">
             <CommandEmpty>
               {isLoading ? (
                 <div className="flex items-center justify-center p-4">
@@ -98,7 +108,7 @@ export function AddressSelect({
                   key={option.value}
                   value={option.label}
                   onSelect={handleSelect}
-                  className="flex items-center cursor-pointer"
+                  className="flex items-center cursor-pointer px-4 py-3"
                 >
                   <div className="flex-grow text-sm truncate">{option.label}</div>
                   <Check
