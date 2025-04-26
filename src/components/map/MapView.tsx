@@ -112,50 +112,44 @@ const DrawControl = ({ onCreated }: { onCreated: (e: any) => void }) => {
 };
 
 // MapContent component to wrap all map-related components that need map context
-const MapContent = ({
-  coordinates,
-  polygon,
-  isSatelliteActive,
-  toggleMapLayer,
-  handleCreated,
-  featureGroupRef
-}: {
+const MapContent: React.FC<{
   coordinates: Coordinates;
   polygon: L.LatLng[];
   isSatelliteActive: boolean;
   toggleMapLayer: () => void;
   handleCreated: (e: any) => void;
   featureGroupRef: React.RefObject<L.FeatureGroup>;
+}> = ({
+  coordinates,
+  polygon,
+  isSatelliteActive,
+  toggleMapLayer,
+  handleCreated,
+  featureGroupRef
 }) => {
   return (
     <>
-      {/* Base map layer - always present but may be hidden by satellite */}
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         opacity={isSatelliteActive ? 0.5 : 1}
       />
       
-      {/* Satellite layer with dynamic opacity */}
       <TileLayer
         attribution='&copy; <a href="https://www.esri.com">Esri</a>'
         url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         opacity={isSatelliteActive ? 1 : 0}
       />
       
-      {/* Always center on load */}
       <SetViewOnLoad coordinates={coordinates} />
       
-      {/* Layer toggle control */}
       <MapLayerControl 
         onToggleLayer={toggleMapLayer} 
         isSatelliteActive={isSatelliteActive} 
       />
       
-      {/* Location marker */}
       <Marker position={[coordinates.lat, coordinates.lng]} />
       
-      {/* Drawing tools */}
       <FeatureGroup ref={featureGroupRef}>
         <DrawControl onCreated={handleCreated} />
         
@@ -261,13 +255,13 @@ export function MapView({ project, onPolygonSave }: MapViewProps) {
   return (
     <div className="space-y-4">
       <div className="h-[500px] rounded-md overflow-hidden border">
+        {/* Use unique key based on coordinates to force re-render when they change */}
         <MapContainer
-          key={`map-${coordinates.lat}-${coordinates.lng}`}
+          key={`map-${coordinates.lat}-${coordinates.lng}-${Date.now()}`}
           center={[coordinates.lat, coordinates.lng]}
           zoom={18}
           style={{ height: "100%", width: "100%" }}
         >
-          {/* Use a child component to handle all map-related elements to ensure proper context */}
           <MapContent
             coordinates={coordinates}
             polygon={polygon}
