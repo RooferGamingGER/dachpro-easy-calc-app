@@ -8,7 +8,7 @@ import "leaflet-draw/dist/leaflet.draw.css";
 import { Project, Coordinates, GeoPolygon } from "@/types";
 import { calculatePolygonArea } from "@/utils/calculations";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Map as MapIcon, Satellite } from "lucide-react";
 
 // Fix the Leaflet icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -31,6 +31,30 @@ const SetViewOnLoad: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) 
   }, [coordinates, map]);
   
   return null;
+};
+
+// Layer toggle component
+const MapLayerControl: React.FC<{ onToggleLayer: () => void, isSatelliteActive: boolean }> = ({ 
+  onToggleLayer, 
+  isSatelliteActive 
+}) => {
+  const map = useMap();
+  
+  return (
+    <div className="leaflet-top leaflet-right" style={{ marginTop: '50px' }}>
+      <div className="leaflet-control leaflet-bar">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="bg-white p-1 h-8 w-8" 
+          onClick={onToggleLayer}
+          title={isSatelliteActive ? "Standardkarte anzeigen" : "Satellitenbild anzeigen"}
+        >
+          {isSatelliteActive ? <MapIcon size={16} /> : <Satellite size={16} />}
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 // Draw control component that properly handles React context
@@ -94,6 +118,7 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
   );
   const [polygon, setPolygon] = useState<L.LatLng[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSatelliteActive, setIsSatelliteActive] = useState(true);
   const featureGroupRef = useRef<L.FeatureGroup>(null);
   
   useEffect(() => {
@@ -104,7 +129,17 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
       );
       setPolygon(points);
     }
-  }, [project.roofPolygon]);
+
+    // Always update coordinates if they change
+    if (project.coordinates) {
+      setCoordinates(project.coordinates);
+    }
+  }, [project.roofPolygon, project.coordinates]);
+
+  // Toggle between satellite and standard map
+  const toggleMapLayer = () => {
+    setIsSatelliteActive(!isSatelliteActive);
+  };
 
   // Type declaration for the event from DrawControl
   interface DrawControlEvent {
@@ -163,25 +198,46 @@ export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
           zoom={18}
           style={{ height: "100%", width: "100%" }}
         >
+          {/* Base map layer - always present but may be hidden by satellite */}
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            opacity={isSatelliteActive ? 0.5 : 1}
           />
           
+          {/* Satellite layer with dynamic opacity */}
           <TileLayer
             attribution='&copy; <a href="https://www.esri.com">Esri</a>'
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            opacity={isSatelliteActive ? 1 : 0}
           />
           
+          {/* Always center on load */}
           <SetViewOnLoad coordinates={coordinates} />
           
+          {/* Layer toggle control */}
+          <MapLayerControl 
+            onToggleLayer={toggleMapLayer} 
+            isSatelliteActive={isSatelliteActive} 
+          />
+          
+          {/* Location marker */}
           <Marker position={[coordinates.lat, coordinates.lng]} />
           
+          {/* Drawing tools */}
           <FeatureGroup ref={featureGroupRef}>
             <DrawControl onCreated={handleCreated} />
             
             {polygon.length > 0 && (
-              <Polygon positions={polygon} />
+              <Polygon 
+                positions={polygon} 
+                pathOptions={{ 
+                  color: '#3388ff',
+                  weight: 3, 
+                  opacity: 0.8, 
+                  fillOpacity: 0.3 
+                }} 
+              />
             )}
           </FeatureGroup>
         </MapContainer>

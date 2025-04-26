@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { AddressResult, AddressOption } from '@/types/address';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from "sonner";
+import { normalizeGermanText } from '@/utils/textUtils';
 
 export function useAddressSearch(query: string) {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,14 +20,12 @@ export function useAddressSearch(query: string) {
       setIsLoading(true);
       try {
         // Normalize German characters for better search results
-        const normalizedQuery = debouncedQuery
-          .replace(/ß/g, 'ss')
-          .normalize('NFC');
+        const normalizedQuery = normalizeGermanText(debouncedQuery);
 
         const response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(
             normalizedQuery
-          )}&addressdetails=1&limit=5&accept-language=de`
+          )}&addressdetails=1&limit=7&accept-language=de`
         );
 
         if (!response.ok) {
@@ -50,10 +49,13 @@ export function useAddressSearch(query: string) {
             addressParts.push(address.road + (address.house_number ? ' ' + address.house_number : ''));
           }
           
-          if (address.postcode || address.city) {
+          if (address.postcode || address.city || address.town || address.village) {
             let locationPart = '';
             if (address.postcode) locationPart += address.postcode;
-            if (address.city) locationPart += (locationPart ? ' ' : '') + address.city;
+            
+            const cityName = address.city || address.town || address.village || address.hamlet || '';
+            if (cityName) locationPart += (locationPart ? ' ' : '') + cityName;
+            
             addressParts.push(locationPart);
           }
           
