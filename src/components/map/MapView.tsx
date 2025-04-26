@@ -26,6 +26,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 // Component to automatically center map on coordinates
 const SetViewOnLoad = ({ coordinates }: { coordinates: Coordinates }) => {
   const map = useMap();
+  
   useEffect(() => {
     map.setView([coordinates.lat, coordinates.lng], 18);
   }, [coordinates, map]);
@@ -115,7 +116,7 @@ interface MapViewProps {
   onPolygonSave: (polygon: GeoPolygon) => void;
 }
 
-export const MapView: React.FC<MapViewProps> = ({ project, onPolygonSave }) => {
+export const MapView = ({ project, onPolygonSave }: MapViewProps) => {
   const [coordinates, setCoordinates] = useState<Coordinates | null>(
     project.coordinates || null
   );
